@@ -32,8 +32,41 @@ class NetCat:
         else:
             self.send()
 
+    def send(self):
+        self.socket.connect((self.args.target, self.args.port))
+        if self.buffer:
+            self.socket.send(self.buffer)
+        
+        try:
+            while True:
+                recv_len = 1
+                response = ''
+                while recv_len:
+                    data = self.socket.recv(4096)
+                    recv_len = len(data)
+                    response += data.decode()
+                    if recv_len < 4096:
+                        break
+                    if response:
+                        print(response)
+                        buffer = input('> ')
+                        buffer += '\n'
+                        self.socket.send(buffer.encode())
+        except KeyboardInterrupt:
+            print('User terminated.')
+            self.socket.close()
+            sys.exit()
+
 
 if __name__ == '__main__':
+    """command line interface
+    The -c argument sets up an
+    interactive shell, the -e argument executes one specific command,
+    the -l argument indicates that a listener should be set up, the -p
+    argument specifies the port on which to communicate, the -t
+    argument specifies the target IP, and the -u argument specifies the
+    name of a file to upload.
+    """
     parser = argparse.ArgumentParser(description='BHP Net Tool',
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      epilog=textwrap.dedent('''Example: 2
@@ -60,6 +93,16 @@ if __name__ == '__main__':
                         help='specified IP')
     parser.add_argument('-u', '--upload',help='upload file')
     args = parser.parse_args()
+
+    """
+    Both the sender and receiver can use this
+    program, so the arguments define whether it’s invoked to send or
+    listen. The -c, -e, and -u arguments imply the -l argument, because
+    those arguments apply to only the listener side of the
+    communication. The sender side makes the connection to the
+    listener, and so it needs only the -t and -p arguments to define the
+    target listener.
+    """
     if args.listen:
         buffer = ''
     else:
