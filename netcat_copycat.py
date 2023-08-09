@@ -57,6 +57,16 @@ class NetCat:
             self.socket.close()
             sys.exit()
 
+    def listen(self):
+        self.socket.bind((self.args.target, self.args.port))
+        self.socket.listen(5)
+        while True:
+            client_socket, _ = self.socket.accept()
+            client_thread = threading.Thread(
+                target=self.handle, args=(client_socket,)
+            )
+            client_thread.start()
+
 
 if __name__ == '__main__':
     """command line interface
