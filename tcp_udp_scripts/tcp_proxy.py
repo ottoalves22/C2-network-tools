@@ -2,16 +2,46 @@ import sys
 import socket
 import threading
 
-def response_handler():
-    pass
+
+# These bellow is where you can change info on the buffer between remote and local
+#modify requests from remote
+def request_handler(buffer):
+    return buffer
+
+#modify responses for local host
+def response_handler(buffer):
+    return buffer
 
 
-def hexdump():
-    pass
+# http://code.activestate.com/recipes/142812-hex-dumper/
+def hexdump(src, length=16):
+    result = []
+    digits = 4 if isinstance(src, str) else 2
+    for i in range(0, len(src), length):
+        s = src[i:i+length]
+        hexa = b' '.join(["%0*X" % (digits, ord(x)) for x in s])
+        text = b''.join([x if 0x20 <= ord(x) < 0x7F else b'.' for x in s])
+        result.append( b"%04X %-*s %s" % (i, length*(digits + 1), hexa,
+        text) )
+    print(result)
 
 
-def receive_from():
-    pass
+def receive_from(connection: socket.socket):
+    buffer = ""
+
+    #2s timeout
+    connection.settimeout(2)
+    try:
+        while True:
+            data = connection.recv(4096)
+            if not data:
+                break
+            else:
+                buffer += data
+    except:
+        pass
+
+    return buffer
 
 
 def proxy_handler(client_socket, remote_host, remote_port, receive_first):
@@ -39,7 +69,7 @@ def proxy_handler(client_socket, remote_host, remote_port, receive_first):
         if len(local_buffer):
             print(f"[==>] Received {len(local_buffer)} bytes from localhost")
             hexdump(local_buffer)
-            local_buffer = response_handler(local_buffer)
+            local_buffer = request_handler(local_buffer)
             remote_socket.send(local_buffer)
             print(f"[==>] Send to remote")
         
